@@ -9,6 +9,8 @@
 
 **Selected: candidate**, based on spam F1 on the held-out test set (the metric this project treats as the headline number, not accuracy).
 
+**Note:** Both models achieved perfect or near-perfect spam F1 scores, which reflects this being a small, likely-synthetic dataset with trivially-separable classes (per EDA: ham and spam message lengths do not overlap). Ties are broken by >= favoring the candidate, so the selection should not be read as a demonstrated win but rather as a design-time choice when models are equivalent on this particular benchmark.
+
 ## Per-class breakdown, baseline
 
 ```

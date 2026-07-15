@@ -80,6 +80,11 @@ def main():
         f.write(f"| Spam recall | {baseline_scores['spam_recall']:.4f} | {candidate_scores['spam_recall']:.4f} |\n\n")
         f.write(f"**Selected: {winner}**, based on spam F1 on the held-out test set "
                 f"(the metric this project treats as the headline number, not accuracy).\n\n")
+        f.write("**Note:** Both models achieved perfect or near-perfect spam F1 scores, which reflects "
+                f"this being a small, likely-synthetic dataset with trivially-separable classes "
+                f"(per EDA: ham and spam message lengths do not overlap). Ties are broken by >= "
+                f"favoring the candidate, so the selection should not be read as a demonstrated win "
+                f"but rather as a design-time choice when models are equivalent on this particular benchmark.\n\n")
         f.write("## Per-class breakdown, baseline\n\n```\n")
         f.write(baseline_scores["report"])
         f.write("\n```\n\n## Per-class breakdown, candidate\n\n```\n")

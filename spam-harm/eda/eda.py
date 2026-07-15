@@ -74,7 +74,7 @@ def main():
     plt.savefig(CHART_PATH, dpi=120)
     print(f"\nSaved chart -> {CHART_PATH}")
 
-    with open(FINDINGS_PATH, "w") as f:
+    with open(FINDINGS_PATH, "w", encoding="utf-8") as f:
         f.write("# EDA Findings\n\n")
         f.write("## Class balance\n\n")
         f.write(f"```\n{balance}\n```\n\n")
