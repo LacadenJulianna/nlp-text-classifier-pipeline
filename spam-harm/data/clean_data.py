@@ -49,6 +49,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     start_rows = len(df)
 
+    df = df.dropna(subset=["message"])
     df["message"] = df["message"].astype(str).str.strip()
     df = df[df["message"] != ""]
     df = df.drop_duplicates(subset=["message"])
