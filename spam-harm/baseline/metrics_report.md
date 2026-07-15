@@ -1,4 +1,4 @@
-# Baseline Model — Metrics Report
+# Baseline Model â€” Metrics Report
 
 - **Accuracy:** 1.0000 (100.0%)
 - **Spam F1:** 1.0000

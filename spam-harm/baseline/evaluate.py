@@ -76,7 +76,7 @@ def main():
     plt.savefig(CM_PATH, dpi=120)
     print(f"\nSaved confusion matrix -> {CM_PATH}")
 
-    with open(REPORT_PATH, "w") as f:
+    with open(REPORT_PATH, "w", encoding="utf-8") as f:
         f.write("# Baseline Model — Metrics Report\n\n")
         f.write(f"- **Accuracy:** {acc:.4f} ({acc*100:.1f}%)\n")
         f.write(f"- **Spam F1:** {spam_f1:.4f}\n")

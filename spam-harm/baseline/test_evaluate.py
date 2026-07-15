@@ -20,7 +20,7 @@ CM_PATH = SCRIPT_DIR / "confusion_matrix.png"
 def run_checks():
     subprocess.run([sys.executable, str(SCRIPT_DIR / "evaluate.py")], check=True)
 
-    report_text = REPORT_PATH.read_text()
+    report_text = REPORT_PATH.read_text(encoding="utf-8")
 
     checks = [
         ("metrics report was created", REPORT_PATH.exists()),
