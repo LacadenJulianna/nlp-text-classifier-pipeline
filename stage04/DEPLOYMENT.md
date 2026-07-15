@@ -47,6 +47,8 @@ host without your full training pipeline running there too.
    doesn't match what ran locally, something about the cloud environment
    differs from what was tested here, and that's worth chasing down before
    calling this "deployed."
+   It's `Predicted rating`: is TV-PG (confidence:38%)
+   ![Full probability breakdown](image.png)
 
 ## If it fails to deploy
 
@@ -63,5 +65,5 @@ testing:
 ## The public URL
 
 Once deployed, Streamlit gives you a URL like
-`https://<something>.streamlit.app`. That's Day 19's actual deliverable —
+`https://nlp-text-classifier-pipeline-stage04.streamlit.app/`. That's Day 19's actual deliverable —
 save it, since Day 21's README and Day 22's slide deck both need it.
