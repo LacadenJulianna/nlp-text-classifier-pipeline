@@ -14,8 +14,9 @@ from predict import predict_message
 
 
 def run_checks():
-    spam_result = predict_message("WINNER!! You have been selected to receive a "
-                                   "£1000 cash prize. Call 09061701461 now to claim!")
+    spam_result = predict_message("This is not a scam, click now to see the details! "
+                                   "Limited time offer, act now! Get instant access to premium services. "
+                                   "For more details, visit our website or contact us directly.")
     ham_result = predict_message("Hey, are we still on for lunch tomorrow at noon?")
 
     checks = [

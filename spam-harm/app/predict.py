@@ -59,7 +59,8 @@ def predict_message(text: str) -> dict:
 
 if __name__ == "__main__":
     print("Spam example:")
-    print(predict_message("WINNER!! You have been selected to receive a £1000 "
-                           "cash prize. Call 09061701461 now to claim!"))
+    print(predict_message("This is not a scam, click now to see the details! "
+                           "Limited time offer, act now! Get instant access to premium services. "
+                           "For more details, visit our website or contact us directly."))
     print("\nHam example:")
     print(predict_message("Hey, are we still on for lunch tomorrow at noon?"))
