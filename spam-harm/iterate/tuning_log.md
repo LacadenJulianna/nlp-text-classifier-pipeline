@@ -18,10 +18,11 @@ Mean CV spam F1 by `tfidf__stop_words` setting (averaged over all other grid par
 ```
 params
 english    0.628579
+NaN        0.702080
 Name: mean_test_score, dtype: float64
 ```
 
-`english` performs better on average -- note: differs from the single best combination, which used a different setting; the single-best row can differ from the on-average-better setting when it interacts with other params -- best_params_ is what actually gets used.
+`None` performs better on average -- kept
 
 ## Stemming: considered and discarded
 

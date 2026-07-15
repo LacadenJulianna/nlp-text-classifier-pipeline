@@ -1029,7 +1029,7 @@ def main():
     # row happened to use X."
     results = pd.DataFrame(grid.cv_results_)
     stopword_effect = results.groupby(
-        results["params"].apply(lambda p: p["tfidf__stop_words"])
+        results["params"].apply(lambda p: p["tfidf__stop_words"]), dropna=False
     )["mean_test_score"].mean()
     print(f"\nMean CV spam F1 by stop_words setting:\n{stopword_effect}")
 
@@ -1048,8 +1048,14 @@ def main():
                 f"other grid params, not just the single best row):\n\n")
         f.write(f"```\n{stopword_effect}\n```\n\n")
         best_stopword_setting = stopword_effect.idxmax()
-        f.write(f"`{best_stopword_setting}` performs better on average -- "
-                f"{'kept' if best_stopword_setting == grid.best_params_['tfidf__stop_words'] else 'note: differs from the single best combination, which used a different setting; the single-best row can differ from the on-average-better setting when it interacts with other params -- best_params_ is what actually gets used.'}\n\n")
+        # groupby(dropna=False) represents the None group as NaN in the
+        # resulting index, so it must be normalized back to None before
+        # comparing against best_params_ -- otherwise `nan == None` is
+        # always False and the "differs" branch fires even when they agree.
+        best_stopword_actual = None if pd.isna(best_stopword_setting) else best_stopword_setting
+        best_stopword_label = "None" if pd.isna(best_stopword_setting) else best_stopword_setting
+        f.write(f"`{best_stopword_label}` performs better on average -- "
+                f"{'kept' if best_stopword_actual == grid.best_params_['tfidf__stop_words'] else 'note: differs from the single best combination, which used a different setting; the single-best row can differ from the on-average-better setting when it interacts with other params -- best_params_ is what actually gets used.'}\n\n")
         f.write("## Stemming: considered and discarded\n\n")
         f.write("Not implemented for this candidate. Stemming (e.g. via NLTK's "
                 "PorterStemmer) would require an extra dependency plus a corpus "
