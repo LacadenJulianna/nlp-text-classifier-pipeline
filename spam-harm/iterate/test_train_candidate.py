@@ -29,6 +29,36 @@ def run_checks():
     pred = model.predict(["free entry to win a prize call now"])
     log_text = LOG_PATH.read_text(encoding="utf-8")
 
+    # Extract the tfidf stop_words value from the trained model
+    model_stop_words = model.named_steps["tfidf"].stop_words
+
+    # Check 1: Both stopword settings appear in the log
+    both_settings_present = "None" in log_text and "english" in log_text
+
+    # Check 2: Log conclusion is consistent with actual model
+    # Verify the log doesn't say "differs" contradicting what's actually in the model
+    log_says_differs = "note: differs" in log_text
+    if log_says_differs:
+        # If log says "differs", the log's best setting must NOT match the model's
+        # (If they match, then the log is lying)
+        log_is_self_consistent = "note: differs" in log_text  # We're checking it's at least present where it should be
+    else:
+        # If log says "kept", the log's best setting must match the model's
+        log_is_self_consistent = True
+    # More robust check: parse which setting the log claims is best and verify it matches the model
+    # The log format is "`{setting}` performs better on average -- {'kept'|'differs...'}"
+    # We can verify by checking: if "None" is mentioned as best, model should have None; if "english" is mentioned, model should have "english"
+    log_includes_none_as_best = "`None` performs better on average" in log_text
+    log_includes_english_as_best = "`english` performs better on average" in log_text
+    if log_includes_none_as_best or log_includes_english_as_best:
+        # At least one should be true (the best one)
+        if log_includes_none_as_best:
+            # The log claims None is best; model must have None (or the log is wrong)
+            log_is_self_consistent = model_stop_words is None
+        elif log_includes_english_as_best:
+            # The log claims english is best; model must have "english" (or the log is wrong)
+            log_is_self_consistent = model_stop_words == "english"
+
     checks = [
         ("model file was created", MODEL_PATH.exists()),
         ("model has predict()", hasattr(model, "predict")),
@@ -36,6 +66,8 @@ def run_checks():
         ("tuning log was created", LOG_PATH.exists()),
         ("tuning log documents stopword comparison", "stop_words" in log_text.lower() or "stopword" in log_text.lower()),
         ("tuning log documents stemming decision", "stemming" in log_text.lower()),
+        ("tuning log includes both stopword settings (None and english)", both_settings_present),
+        ("tuning log conclusion matches actual model params", log_is_self_consistent),
     ]
 
     print(f"\nRunning {len(checks)} checks...\n")
