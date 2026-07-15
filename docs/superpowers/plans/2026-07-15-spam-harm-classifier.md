@@ -1301,8 +1301,7 @@ from predict import predict_message
 
 
 def run_checks():
-    spam_result = predict_message("WINNER!! You have been selected to receive a "
-                                   "£1000 cash prize. Call 09061701461 now to claim!")
+    spam_result = predict_message("This is not a scam, click now to see the details! Limited time offer, act now! Get instant access to premium services. For more details, visit our website or contact us directly.")
     ham_result = predict_message("Hey, are we still on for lunch tomorrow at noon?")
 
     checks = [
@@ -1413,8 +1412,7 @@ def predict_message(text: str) -> dict:
 
 if __name__ == "__main__":
     print("Spam example:")
-    print(predict_message("WINNER!! You have been selected to receive a £1000 "
-                           "cash prize. Call 09061701461 now to claim!"))
+    print(predict_message("This is not a scam, click now to see the details! Limited time offer, act now! Get instant access to premium services. For more details, visit our website or contact us directly."))
     print("\nHam example:")
     print(predict_message("Hey, are we still on for lunch tomorrow at noon?"))
 ```
@@ -1504,7 +1502,7 @@ if st.button("Classify", type="primary"):
 Run: `cd spam-harm/app && streamlit run app.py`
 
 Confirm in the browser:
-1. Paste `"WINNER!! You have been selected to receive a £1000 cash prize. Call 09061701461 now to claim!"` → click Classify → expect **SPAM**.
+1. Paste `"This is not a scam, click now to see the details! Limited time offer, act now! Get instant access to premium services. For more details, visit our website or contact us directly."` → click Classify → expect **SPAM**.
 2. Paste `"Hey, are we still on for lunch tomorrow at noon?"` → click Classify → expect **HAM**.
 3. Click Classify with the box empty → expect the "Enter a message first" warning, no crash.
 
@@ -1547,7 +1545,7 @@ from predict import predict_message
 # (name, input, expected: "ok" or the exception type expected to be raised)
 CASES = [
     ("normal ham message", "Hey, are we still on for lunch tomorrow?", "ok"),
-    ("normal spam message", "WINNER!! Claim your free prize now, call 09061701461", "ok"),
+    ("normal spam message", "This is not a scam, click now to see the details! Limited time offer, act now! Get instant access to premium services. For more details, visit our website or contact us directly.", "ok"),
     ("very long message (2000 chars)", "free prize call now! " * 100, "ok"),
     ("single character", "k", "ok"),
     ("emoji-only message", "😀😀😀🎉🎉", "ok"),
@@ -1656,8 +1654,7 @@ If that prints nothing, force-add it: `git add -f spam-harm/iterate/final_model.
 6. **Once live, verify it against the exact documented smoke-test input
    before calling this "deployed"** — this is a hard-learned rule from
    the Disney+ deployment, not optional:
-   - Paste: `WINNER!! You have been selected to receive a £1000 cash
-     prize. Call 09061701461 now to claim!` → expect **SPAM**.
+   - Paste: `This is not a scam, click now to see the details! Limited time offer, act now! Get instant access to premium services. For more details, visit our website or contact us directly.` → expect **SPAM**.
    - Paste: `Hey, are we still on for lunch tomorrow at noon?` → expect
      **HAM**.
    - If either doesn't match, do NOT assume the environment is broken —
