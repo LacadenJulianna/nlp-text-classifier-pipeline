@@ -42,13 +42,20 @@ host without your full training pipeline running there too.
    everything in `requirements.txt` fresh.
 
 7. **Once live, actually test it** — don't just confirm it loads. Run the
-   same smoke-test input used throughout this build (Animation + Family
-   genres, 2016, 23-minute movie) and confirm it still predicts TV-G. If it
-   doesn't match what ran locally, something about the cloud environment
-   differs from what was tested here, and that's worth chasing down before
-   calling this "deployed."
-   It's `Predicted rating`: is TV-PG (confidence:38%)
-   ![Full probability breakdown](image.png)
+   same smoke-test input used throughout this build (Movie, 23-minute
+   runtime, release year 2016, Animation + Family genres) and confirm it
+   still predicts TV-G. If it doesn't match what ran locally, something
+   about the cloud environment differs from what was tested here, and
+   that's worth chasing down before calling this "deployed."
+
+   **Verified (2026-07-15):** `Predicted rating: TV-G (confidence: 39%)` —
+   matches local exactly.
+
+   Note: an earlier check here mistakenly used a different input (only
+   "Family" genre selected, default runtime/year) and got TV-PG instead,
+   which looked like a cloud/local mismatch. It wasn't a bug — a different
+   input legitimately produces a different prediction. Always compare
+   against the exact smoke-test input above, not just "any input."
 
 ## If it fails to deploy
 
