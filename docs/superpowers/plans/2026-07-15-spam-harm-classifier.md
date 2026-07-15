@@ -17,6 +17,7 @@
 - Classical ML only (TF-IDF + Naive Bayes / Logistic Regression) — no embeddings, no transformers.
 - The raw dataset is sourced by the human, not fetched by an agent (no internet access assumed in the execution environment).
 - Use `Path(__file__).resolve().parent` (`SCRIPT_DIR`) for all path handling, matching every existing script in this repo.
+- Always pass `encoding="utf-8"` to `open()`/`.read_text()`/`.write_text()` calls on generated markdown files. Windows defaults to cp1252, which silently corrupts em dashes (`—`) into mojibake on write and raises `UnicodeDecodeError` on read on non-Windows machines — found and fixed in Task 5's `evaluate.py`/`test_evaluate.py`.
 - Every `joblib.load()` in this plan loads a model artifact this same pipeline trained and committed (`baseline_model.joblib`, `candidate_model.joblib`, `final_model.joblib`) — never a file from an untrusted external source. This matches the existing pattern in `stage04/predict.py`. Do not load `.joblib`/pickle files from any source outside this repo's own training scripts.
 
 ---
@@ -515,7 +516,7 @@ def main():
     plt.savefig(CHART_PATH, dpi=120)
     print(f"\nSaved chart -> {CHART_PATH}")
 
-    with open(FINDINGS_PATH, "w") as f:
+    with open(FINDINGS_PATH, "w", encoding="utf-8") as f:
         f.write("# EDA Findings\n\n")
         f.write("## Class balance\n\n")
         f.write(f"```\n{balance}\n```\n\n")
@@ -737,7 +738,7 @@ CM_PATH = SCRIPT_DIR / "confusion_matrix.png"
 def run_checks():
     subprocess.run([sys.executable, str(SCRIPT_DIR / "evaluate.py")], check=True)
 
-    report_text = REPORT_PATH.read_text()
+    report_text = REPORT_PATH.read_text(encoding="utf-8")
 
     checks = [
         ("metrics report was created", REPORT_PATH.exists()),
@@ -849,7 +850,7 @@ def main():
     plt.savefig(CM_PATH, dpi=120)
     print(f"\nSaved confusion matrix -> {CM_PATH}")
 
-    with open(REPORT_PATH, "w") as f:
+    with open(REPORT_PATH, "w", encoding="utf-8") as f:
         f.write("# Baseline Model — Metrics Report\n\n")
         f.write(f"- **Accuracy:** {acc:.4f} ({acc*100:.1f}%)\n")
         f.write(f"- **Spam F1:** {spam_f1:.4f}\n")
@@ -928,7 +929,7 @@ def run_checks():
 
     model = joblib.load(MODEL_PATH)
     pred = model.predict(["free entry to win a prize call now"])
-    log_text = LOG_PATH.read_text()
+    log_text = LOG_PATH.read_text(encoding="utf-8")
 
     checks = [
         ("model file was created", MODEL_PATH.exists()),
@@ -1035,7 +1036,7 @@ def main():
     joblib.dump(grid.best_estimator_, MODEL_PATH)
     print(f"Saved model -> {MODEL_PATH}")
 
-    with open(LOG_PATH, "w") as f:
+    with open(LOG_PATH, "w", encoding="utf-8") as f:
         f.write("# Candidate Model — Tuning Log\n\n")
         f.write("## Grid searched\n\n")
         f.write(f"```\n{PARAM_GRID}\n```\n\n")
@@ -1118,7 +1119,7 @@ def run_checks():
     subprocess.run([sys.executable, str(SCRIPT_DIR / "evaluate_candidate.py")], check=True)
 
     final_model = joblib.load(FINAL_MODEL_PATH)
-    choice_text = CHOICE_PATH.read_text()
+    choice_text = CHOICE_PATH.read_text(encoding="utf-8")
 
     checks = [
         ("final model file was created", FINAL_MODEL_PATH.exists()),
@@ -1216,7 +1217,7 @@ def main():
     shutil.copy(winner_path, FINAL_MODEL_PATH)
     print(f"\nWinner: {winner} (copied to {FINAL_MODEL_PATH})")
 
-    with open(METRICS_PATH, "w") as f:
+    with open(METRICS_PATH, "w", encoding="utf-8") as f:
         f.write("# Candidate Model — Metrics Report\n\n")
         f.write(f"- **Accuracy:** {candidate_scores['accuracy']:.4f}\n")
         f.write(f"- **Spam F1:** {candidate_scores['spam_f1']:.4f}\n")
@@ -1226,7 +1227,7 @@ def main():
         f.write(candidate_scores["report"])
         f.write("\n```\n")
 
-    with open(CHOICE_PATH, "w") as f:
+    with open(CHOICE_PATH, "w", encoding="utf-8") as f:
         f.write("# Model Choice: Baseline vs. Candidate\n\n")
         f.write("| Metric | Baseline (Naive Bayes) | Candidate (tuned Logistic Regression) |\n")
         f.write("|---|---|---|\n")
