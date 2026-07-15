@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - `RANDOM_STATE = 42` and `TEST_SIZE = 0.2` everywhere a split or a seeded model is used (matches `stage02`/`stage03` convention).
-- Headline metric is **F1 on the spam class** (`pos_label=1`), never raw accuracy — this dataset is ~87% ham / ~13% spam, so accuracy alone is misleading.
+- Headline metric is **F1 on the spam class** (`pos_label=1`), never raw accuracy — the raw file is an even 500/500 split, but 323 of the 500 "spam" rows are exact duplicates; once `clean_data.py` dedupes, the real class balance is ~74% ham / ~26% spam, imbalanced enough that accuracy alone would be misleading.
 - No pytest. Tests are plain assert-based scripts with a `run_checks()`/`run()` function, a list of `(name, passed)` tuples, PASS/FAIL printout, and `raise SystemExit` on any failure — matching `stage01/test_clean_data.py` and `stage04/stress_test.py`.
 - Every model artifact is a full `sklearn.pipeline.Pipeline` (vectorizer + classifier bundled) saved via `joblib.dump`. Inference only ever calls `.predict()`/`.predict_proba()` on raw text — never re-fits anything.
 - Classical ML only (TF-IDF + Naive Bayes / Logistic Regression) — no embeddings, no transformers.
@@ -23,8 +23,7 @@
 
 ### Task 1: Raw dataset loader
 
-**Prerequisite (human action required before this task's tests can pass):**
-Download the SMS Spam Collection dataset (~5,574 SMS messages, spam/ham labels) — e.g. the Kaggle dataset `uciml/sms-spam-collection-dataset` (file `spam.csv`) or the original UCI `smsspamcollection.zip` (file `SMSSpamCollection`) — and place it at `spam-harm/data/raw/spam.csv`. If you use the raw UCI file, just rename it to `spam.csv` (it's already comma/tab-delimited two-column data; the loader below auto-detects the Kaggle CSV format specifically, so if you're using the UCI file, keep it as tab-separated and note the filename — see Step 6 for the fallback path).
+**Dataset in use:** `spam-harm/data/raw/spam.csv` (1,000 rows, columns `message_content` + `is_spam` as 0/1 int, UTF-8 encoded, longer email-style text rather than short SMS, 323 exact-duplicate rows — all on the spam side). The loader below is written for this specific schema, with a fallback path for the classic SMS Spam Collection format (`v1`/`v2` or `label`/`message` columns, latin-1) in case that dataset is used instead in the future.
 
 **Files:**
 - Create: `spam-harm/data/raw/.gitkeep` (placeholder so the folder exists in git even before the CSV is added)
@@ -68,16 +67,16 @@ RAW_PATH = SCRIPT_DIR / "raw" / "spam.csv"
 def run_checks():
     if not RAW_PATH.exists():
         raise SystemExit(
-            f"Raw dataset not found at {RAW_PATH}. Download the SMS Spam "
-            "Collection dataset and place it there before running this test "
-            "(see Task 1's prerequisite note in the implementation plan)."
+            f"Raw dataset not found at {RAW_PATH}. Place the raw dataset CSV "
+            "there before running this test (see Task 1's dataset note in "
+            "the implementation plan)."
         )
 
     df = load_raw_data(RAW_PATH)
 
     checks = [
         ("has exactly two columns", list(df.columns) == ["label", "message"]),
-        ("has at least 1000 rows", len(df) > 1000),
+        ("has at least 900 rows", len(df) >= 900),
         ("label column only has spam/ham values",
          set(df["label"].str.lower().unique()) <= {"spam", "ham"}),
         ("message column has no nulls", df["message"].isnull().sum() == 0),
@@ -112,10 +111,14 @@ Create `spam-harm/data/load_raw.py`:
 """
 spam-harm/data/load_raw.py
 
-Loads the SMS Spam Collection dataset. Handles the two common
-distributions of this dataset: the Kaggle CSV (columns `v1`/`v2`,
-latin-1 encoded, with trailing unnamed junk columns from stray commas
-in the original text) and a plain two-column `label`/`message` CSV.
+Loads the raw spam/harm dataset (`message_content`/`is_spam`, UTF-8,
+`is_spam` already 0/1 int). Also handles the classic SMS Spam
+Collection format (`v1`/`v2` or `label`/`message` columns, latin-1) as
+a fallback, in case that dataset is swapped in later. Regardless of
+source format, always returns `label` as the string "spam"/"ham" (not
+0/1) -- clean_data.py owns the one place that maps to int, so every
+downstream script sees the same convention no matter which raw format
+was read.
 
 Run:
     python load_raw.py
@@ -130,11 +133,16 @@ RAW_PATH = SCRIPT_DIR / "raw" / "spam.csv"
 
 def load_raw_data(path: Path) -> pd.DataFrame:
     try:
-        df = pd.read_csv(path, encoding="latin-1")
-    except UnicodeDecodeError:
         df = pd.read_csv(path, encoding="utf-8")
+    except UnicodeDecodeError:
+        df = pd.read_csv(path, encoding="latin-1")
 
-    if "v1" in df.columns and "v2" in df.columns:
+    if "message_content" in df.columns and "is_spam" in df.columns:
+        df = df[["message_content", "is_spam"]].rename(
+            columns={"message_content": "message", "is_spam": "label"}
+        )
+        df["label"] = df["label"].map({1: "spam", 0: "ham"})
+    elif "v1" in df.columns and "v2" in df.columns:
         df = df[["v1", "v2"]].rename(columns={"v1": "label", "v2": "message"})
     elif "label" in df.columns and "message" in df.columns:
         df = df[["label", "message"]]
@@ -143,10 +151,10 @@ def load_raw_data(path: Path) -> pd.DataFrame:
     else:
         raise ValueError(
             f"Unrecognized dataset format at {path}: columns are "
-            f"{list(df.columns)}. Expected Kaggle's v1/v2 columns or a "
-            "plain label/message CSV."
+            f"{list(df.columns)}. Expected message_content/is_spam, "
+            "Kaggle's v1/v2 columns, or a plain label/message CSV."
         )
-    return df
+    return df[["label", "message"]]
 
 
 def main():
@@ -168,7 +176,7 @@ Expected: `5/5 passed.` (assuming the raw file is in place per the prerequisite)
 
 ```bash
 git add spam-harm/data/raw/.gitkeep spam-harm/data/load_raw.py spam-harm/data/test_load_raw.py
-git commit -m "feat(spam-harm): add raw SMS Spam Collection loader"
+git commit -m "feat(spam-harm): add raw spam/harm dataset loader"
 ```
 
 Note: `spam-harm/data/raw/spam.csv` itself should also be committed once present (small file, matches how `disney_plus_titles.csv` is committed at repo root) — add it in Task 2's commit alongside the cleaning script, once its presence has been confirmed by this task's test.
@@ -250,15 +258,19 @@ Create `spam-harm/data/clean_data.py`:
 """
 spam-harm/data/clean_data.py
 
-Cleans the raw SMS Spam Collection dataset and produces the one
-canonical train/test split every later phase (baseline, iterate) loads
-directly -- splitting happens exactly once, here, so every phase is
-compared on the identical held-out set.
+Cleans the raw spam/harm dataset and produces the one canonical
+train/test split every later phase (baseline, iterate) loads directly
+-- splitting happens exactly once, here, so every phase is compared on
+the identical held-out set.
 
 Decisions made here:
-  1. Drop exact-duplicate messages -- the raw dataset has some repeated
-     spam templates; keeping duplicates would let the same message
-     appear in both train and test, leaking information.
+  1. Drop exact-duplicate messages -- the raw file has 323 of its 1,000
+     rows as exact duplicates, all on the spam side (confirmed during
+     EDA). Keeping them would let the same message appear in both train
+     and test, leaking information, and would also overstate how
+     balanced the classes really are: the raw file looks like an even
+     500/500 split, but after dedup it's ~500 ham / ~177 spam (about
+     74%/26%).
   2. Map label strings to 0/1 (1=spam) -- sklearn's binary metrics
      (f1_score, precision, recall) default to pos_label=1, so spam=1
      makes "the spam-class F1" the default reading of those functions,
@@ -268,8 +280,9 @@ Decisions made here:
      tuned as a grid-search variable in the iterate phase instead of
      being hard-coded here, so its effect can actually be measured
      rather than assumed.
-  4. Split is stratified (spam is ~13% of the data) and uses a fixed
-     random_state so it is exactly reproducible across scripts and runs.
+  4. Split is stratified (spam is ~26% of the data post-dedup) and uses
+     a fixed random_state so it is exactly reproducible across scripts
+     and runs.
 
 Run:
     python clean_data.py
@@ -763,11 +776,13 @@ spam-harm/baseline/evaluate.py
 
 Evaluates the baseline model against the held-out test set. Headline
 metric is spam-class F1, not accuracy -- a model that always predicts
-"ham" would score ~87% accuracy on this dataset while catching zero
-spam, which is exactly why accuracy alone is the wrong number to lead
-with here. The naive baseline below makes that concrete: it's the
-"always predict ham" F1, which is 0.0 by construction (zero recall on
-the spam class).
+"ham" would score accuracy equal to the ham proportion of the test set
+while catching zero spam, which is exactly why accuracy alone is the
+wrong number to lead with here. The naive baseline below makes that
+concrete: it's the "always predict ham" F1, which is 0.0 by
+construction (zero recall on the spam class). The ham proportion is
+computed from the actual test set below rather than hard-coded, since
+it depends on which raw dataset is in use.
 
 Run:
     python evaluate.py
@@ -804,6 +819,7 @@ def main():
 
     y_test = test_df["label"]
     y_pred = model.predict(test_df["message"])
+    ham_proportion = (y_test == 0).mean()
 
     acc = accuracy_score(y_test, y_pred)
     spam_f1 = f1_score(y_test, y_pred, pos_label=1)
@@ -840,8 +856,8 @@ def main():
         f.write(f"- **Spam precision:** {spam_precision:.4f}\n")
         f.write(f"- **Spam recall:** {spam_recall:.4f}\n\n")
         f.write(f"**Naive baseline** (always predict ham): spam F1 = {NAIVE_BASELINE_SPAM_F1:.4f}\n\n")
-        f.write("Accuracy alone is misleading here: this dataset is ~87% ham, so a "
-                "model that always predicts \"ham\" would score ~87% accuracy while "
+        f.write(f"Accuracy alone is misleading here: this test set is {ham_proportion*100:.1f}% ham, so a "
+                f"model that always predicts \"ham\" would score {ham_proportion*100:.1f}% accuracy while "
                 "catching zero spam. Spam F1 is the number that actually reflects "
                 "whether the model is useful.\n\n")
         f.write("## Per-class breakdown\n\n```\n")
@@ -1443,7 +1459,7 @@ st.set_page_config(page_title="Spam/Harm Text Classifier", page_icon="🚫")
 st.title("🚫 Spam/Harm Text Classifier")
 st.caption(
     "Classifies a message as spam or ham (legitimate) using a TF-IDF + "
-    "classical ML model trained on the SMS Spam Collection dataset. "
+    "classical ML model trained on a small labeled spam/ham dataset. "
     "See README.md for accuracy and known limitations before trusting a prediction."
 )
 
@@ -1663,8 +1679,8 @@ Create `spam-harm/README.md`:
 Classifies a text message as spam or ham (legitimate) using TF-IDF +
 classical ML (Naive Bayes baseline, tuned Logistic Regression as the
 final model — whichever won on held-out spam F1, see
-`iterate/model_choice.md`). Trained on the SMS Spam Collection dataset
-(~5,574 labeled SMS messages).
+`iterate/model_choice.md`). Trained on a small labeled spam/ham dataset
+(1,000 raw rows; 677 after removing exact-duplicate messages).
 
 **Live demo:** [add your Streamlit Cloud URL here once deployed — see app/DEPLOYMENT.md]
 
@@ -1688,19 +1704,20 @@ this repo directly, produced by `iterate/evaluate_candidate.py`).
 
 ## What this model can do
 
-- Trained on ~5,574 real SMS messages, evaluated on a held-out test set.
+- Trained on 677 labeled messages (after deduplication), evaluated on a held-out test set.
 - Headline metric is **spam-class F1** (see `iterate/model_choice.md`
-  for the exact number) — not accuracy, since this dataset is ~87% ham
-  and accuracy alone would reward a model that just says "ham" every time.
+  for the exact number) — not accuracy, since the deduplicated dataset is
+  ~74% ham and accuracy alone would reward a model that just says "ham" every time.
 - Beats the naive baseline (always predict ham, spam F1 = 0.0) by a
   real, verified margin (see `baseline/metrics_report.md`).
 
 ## What this model can't do — read this before trusting a prediction
 
-- Trained on SMS-style short messages from one specific dataset. Longer-form
-  text, email, or messages in a very different style/register may not
-  classify as reliably.
-- English only — the training data is English-language SMS.
+- Trained on a small (677-message, post-dedup), possibly synthetic
+  dataset of longer email-style text, not real-world SMS traffic —
+  performance on genuinely different text (short SMS, social media
+  DMs, etc.) is untested.
+- English only — the training data is English-language text.
 - "Harm" here means spam/unsolicited-commercial text specifically, not
   a general toxicity/harassment classifier — those are a different
   labeling task with different training data.
@@ -1720,7 +1737,7 @@ app/        predict.py, Streamlit app, stress tests, deployment guide
 
 ## Known open items (not yet resolved)
 
-- Dataset license/terms of use for the SMS Spam Collection dataset — confirm before any use beyond this learning project.
+- Dataset provenance/license unconfirmed — the source of `spam-harm/data/raw/spam.csv` (downloaded from Kaggle to `C:\Users\Julianna\Downloads\spam_dataset.csv`) and whether it's a real or synthetic dataset was not verified. Confirm before any use beyond this learning project.
 - Stemming was considered and discarded for this iteration (see `iterate/tuning_log.md`) — worth revisiting if a future iteration shows token sparsity is a real bottleneck.
 ```
 
