@@ -5,7 +5,7 @@ title from its genre, runtime, and release year. Built as a 4-week
 learning project: data exploration → baseline model → iteration →
 deployment.
 
-**Live demo:** [add your Streamlit Cloud URL here once deployed — see DEPLOYMENT.md]
+**Live demo:** https://nlp-text-classifier-pipeline-stage04.streamlit.app/
 
 ## Setup (running locally)
 
