@@ -5,7 +5,7 @@ analysis. Built with Python, scikit-learn, and pandas using classical ML models
 (TF-IDF + Logistic Regression/Naive Bayes) and deployed as an interactive live
 dashboard via Streamlit.
 
-This repo contains two projects, built in sequence as part of an SLU internship:
+This repo contains three projects, built in sequence as part of an SLU internship:
 
 ## `spam-harm/` — Spam/Harm text classifier
 
@@ -15,6 +15,16 @@ a deployable Streamlit app.
 
 See [`spam-harm/README.md`](spam-harm/README.md) for setup, usage, model
 accuracy, and known limitations.
+
+## `imdb-sentiment/` — IMDB review sentiment classifier
+
+The other half of the deliverable described above. TF-IDF + Logistic
+Regression trained directly (no separate baseline/candidate stages — see its
+README for why) on the classic 50,000-review labeled IMDB dataset. **90.46%
+test accuracy.**
+
+See [`imdb-sentiment/README.md`](imdb-sentiment/README.md) for setup, usage,
+model accuracy, and known limitations.
 
 ## `stage01/` – `stage04/` — Disney+ content-rating classifier
 
@@ -35,6 +45,11 @@ spam-harm/    Spam/Harm text classifier (the repo's primary deliverable)
   baseline/   TF-IDF + Naive Bayes baseline model and metrics
   iterate/    Tuned Logistic Regression candidate, comparison, final model
   app/        predict.py, Streamlit app, stress tests, deployment guide
+
+imdb-sentiment/  IMDB review sentiment classifier
+  data/raw/   Raw dataset (not committed, see README — 66MB, download separately)
+  train.py    Cleaning, training, evaluation in one pass
+  app/        predict.py, Streamlit app, tests, deployment guide
 
 stage01/      Disney+ project: data exploration and cleaning
 stage02/      Disney+ project: feature engineering and baseline model

@@ -1,3 +1,4 @@
 # .gitignore (repo root)
 __pycache__/
 *.pyc
+imdb-sentiment/data/raw/*.csv
